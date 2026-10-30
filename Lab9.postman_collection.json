@@ -1,0 +1,108 @@
+{
+  "info": {
+    "_postman_id": "4c3fe390-9d1d-4b4c-a1fb-63c43962eb5e",
+    "name": "WEBDEV3 Lab 9 - RESTful Posts API",
+    "description": "Token-secured Laravel posts API. Configure baseUrl, email, and password; run Create token first. Try the unauthenticated request and invalid post payload for the expected 401 and 422 responses.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8000" },
+    { "key": "email", "value": "" },
+    { "key": "password", "value": "" },
+    { "key": "token", "value": "" },
+    { "key": "postId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Create token",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"device_name\": \"Postman\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/tokens"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Token is created', function () { pm.response.to.have.status(201); });", "if (pm.response.code === 201) { pm.collectionVariables.set('token', pm.response.json().token); }"] } }]
+    },
+    {
+      "name": "List posts (401 without token)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/posts"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Missing token is rejected', function () { pm.response.to.have.status(401); });"] } }]
+    },
+    {
+      "name": "List posts (401 with invalid token)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer not-a-valid-token" }],
+        "url": "{{baseUrl}}/api/posts"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Invalid token is rejected', function () { pm.response.to.have.status(401); });"] } }]
+    },
+    {
+      "name": "Get authenticated user",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/user"
+      }
+    },
+    {
+      "name": "List posts",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/posts?page=1"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Posts are returned with pagination', function () { pm.response.to.have.status(200); pm.expect(pm.response.json()).to.have.property('meta'); });"] } }]
+    },
+    {
+      "name": "Create post",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"My first API post\",\n  \"body\": \"Created from Postman.\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/posts"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Post is created', function () { pm.response.to.have.status(201); });", "if (pm.response.code === 201) { pm.collectionVariables.set('postId', pm.response.json().data.id); }"] } }]
+    },
+    {
+      "name": "Create post (422 invalid payload)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/posts"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Invalid payload is rejected', function () { pm.response.to.have.status(422); });"] } }]
+    },
+    {
+      "name": "Show post",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/posts/{{postId}}"
+      }
+    },
+    {
+      "name": "Replace post",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"title\": \"Updated API post\",\n  \"body\": \"Updated from Postman.\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{baseUrl}}/api/posts/{{postId}}"
+      }
+    },
+    {
+      "name": "Delete post",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/posts/{{postId}}"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Post is deleted', function () { pm.response.to.have.status(204); });"] } }]
+    }
+  ]
+}
